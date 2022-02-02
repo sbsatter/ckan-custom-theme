@@ -1,0 +1,27 @@
+{% ckan_extends %}
+
+{% import 'macros/form.html' as form %}
+{% snippet "snippets/search_result_text.html", query=q, count=5, type='dataset'  %}
+
+{% set facets = {
+  'fields': fields_grouped,
+  'search': search_facets,
+  'titles': facet_titles,
+  'translated_fields': translated_fields,
+  'remove_field': remove_field }
+%}
+{% set sorting = [
+  (_('Relevance'), 'score desc, metadata_modified desc'),
+  (_('Name Ascending'), 'title_string asc'),
+  (_('Name Descending'), 'title_string desc'),
+  (_('Last Modified'), 'metadata_modified desc'),
+  (_('Popular'), 'views_recent desc') if g.tracking_enabled else (false, false) ]
+%}
+{% snippet 'snippets/search_form.html', form_id='dataset-search-form', type='dataset', query=q, sorting=sorting, sorting_selected=sort_by_selected, placeholder=h.humanize_entity_type('package', 'dataset', 'search placeholder') or _('Search datasets...'), facets=facets, show_empty=request.params, error=query_error, fields=fields %}
+
+{% set datasets = page.items if page else g.datasets %}
+
+{% block package_search_results_list %}
+  <h1>Search Results: {{_(type)}}</h1>
+  {{ h.snippet('snippets/package_list.html', packages=datasets ) }}
+{% endblock %}

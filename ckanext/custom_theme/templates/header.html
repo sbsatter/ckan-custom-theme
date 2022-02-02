@@ -1,0 +1,160 @@
+{% set dataset_type = h.default_package_type() %}
+
+{% block header_wrapper %}
+
+<header class="navbar-wrapper navbar-static-top masthead">
+  {% block header_debug %} {% if g.debug and not g.debug_supress_header %}
+    <div class="debug">Controller : {{ c.controller }}<br/>Action : {{ c.action }}</div>
+  {% endif %} {% endblock %}
+  <div class="navbar container">
+    <div class="navbar-header">
+      <button data-target="#main-navigation-toggle" data-toggle="collapse" class="navbar-toggle collapsed" type="button" aria-label="expand or collapse" aria-expanded="false">
+        <span class="sr-only">{{ _('Toggle navigation') }}</span>
+        <span class="fa fa-bars"></span>
+      </button>
+    </div>
+    <hgroup class="{{ g.header_class }} navbar-left">
+      {% block header_logo %} {% if g.site_logo %}
+        <a class="logo" href="{{ h.url_for('home.index') }}"><img src="{{ h.url_for_static_or_external('https://unep-gpml.akvotest.org/static/media/GPML-logo-white.a6e9862a.png') }}" alt="{{ g.site_title }}" title="{{ g.site_title }}" /></a>
+      {% else %}
+        <h1>
+          <a href="{{ h.url_for('home.index') }}">{{ g.site_title }}</a>
+        </h1>
+        {% if g.site_description %}
+          <h2>{{ g.site_description }}</h2>{% endif %} {% endif %} {% endblock %}
+    </hgroup>
+
+    <div class="collapse navbar-collapse" id="navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="/dataset">Datasets <span class="sr-only">(current)</span></a></li>
+        <li><a href="/organization">Organizations</a></li>
+        <li class="dropdown">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown" role="button"
+            aria-haspopup="true" aria-expanded="false">Data Catalog <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="#">Action</a></li>
+            <li><a href="#">Another action</a></li>
+            <li><a href="#">Something else here</a></li>
+            <li role="separator" class="divider"></li>
+            <li><a href="#">Separated link</a></li>
+            <li role="separator" class="divider"></li>
+            <li><a href="#">One more separated link</a></li>
+          </ul>
+        </li>
+        <li><a href="/group">Groups</a></li>
+        <li><a href="/about">About</a></li>
+        <li>
+          <a href="/user/register" type="button" style="color: #2d6796;background-color: #05f081;" class="btn join-btn">
+<!--            <button type="button" style="color: #2d6796;background-color: #05f081;" class="btn join-btn">-->
+              Join GPML Data Hub+
+<!--            </button>-->
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div style="display: none !important;" class="collapse navbar-collapse" id="main-navigation-toggle">
+      {% block header_site_navigation %}
+        <nav class="section navigation">
+          <ul class="nav nav-pills">
+            {# block header_site_navigation_tabs #}
+              {% set org_type = h.default_group_type('organization') %}
+              {% set group_type = h.default_group_type('group') %}
+
+		          {{ h.build_nav_main(
+		            (dataset_type ~ '.search', h.humanize_entity_type('package', dataset_type, 'main nav') or _('Datasets'), ["dataset", "resource"]),
+		            (org_type ~ '.index',
+                  h.humanize_entity_type('organization', org_type, 'main nav') or _('Organizations'), ['organization']),
+		            (group_type ~ '.index',
+                  h.humanize_entity_type('group_type', group_type, 'main nav') or _('Groups'), ['group']),
+		            ('home.about', _('About')) ) }}
+	          {# endblock #}
+          </ul>
+        </nav>
+    </div>
+
+<!--    <div class="navbar-right">-->
+<!--    </div>-->
+  </div>
+</header>
+{% block header_account %}
+  <div class="account-masthead">
+    <div class="container">
+
+      {% endblock %} {% block header_site_search %}
+      <div style="width: 33%;display: inline-block;">
+        <form class="section site-search simple-input navbar-form" action="{% url_for dataset_type ~ '.search' %}" method="get">
+          <div class="field">
+            <label for="field-sitewide-search">{% block header_site_search_label %}{{ h.humanize_entity_type('package', dataset_type, 'search_placeholder') or _('Search Datasets...') }}{% endblock %}</label>
+            <input id="field-sitewide-search" type="text" class="form-control" name="q" placeholder="{{ _('Search') }}" aria-label="{{ h.humanize_entity_type('package', dataset_type, 'search_placeholder') or _('Search datasets...') }}"/>
+            <button class="btn-search" type="submit" aria-label="{{ _('Submit') }}"><i class="fa fa-search"></i></button>
+          </div>
+        </form>
+      </div>
+
+      {% endblock %}
+      {% block header_account_container_content %} {% if c.userobj %}
+        <div class="account avatar authed" data-module="me" data-me="{{ c.userobj.id }}">
+          <ul class="list-unstyled">
+            <li>
+              <a>
+                  <i class="fa filter" aria-hidden="true"></i>
+                  <span class="text">{{ _('Filter') }}</span>
+              </a>
+            </li>
+            {% block header_account_logged %} {% if c.userobj.sysadmin %}
+              <li>
+                <a href="{{ h.url_for('admin.index') }}" title="{{ _('Sysadmin settings') }}">
+                  <i class="fa fa-gavel" aria-hidden="true"></i>
+                  <span class="text">{{ _('Admin') }}</span>
+                </a>
+              </li>
+            {% endif %}
+            <li>
+              <a href="{{ h.url_for('user.read', id=c.userobj.name) }}" class="image" title="{{ _('View profile') }}">
+                {{ h.user_image((c.user if c and c.user else ''), size=22) }}
+                <span class="username">{{ c.userobj.display_name }}</span>
+              </a>
+            </li>
+            {% set new_activities = h.new_activities() %}
+            <li class="notifications {% if new_activities > 0 %}notifications-important{% endif %}">
+              {% set notifications_tooltip = ngettext('Dashboard (%(num)d new item)', 'Dashboard (%(num)d new items)', new_activities)
+              %}
+              <a href="{{ h.url_for('dashboard.index') }}" title="{{ notifications_tooltip }}">
+                <i class="fa fa-tachometer" aria-hidden="true"></i>
+                <span class="text">{{ _('Dashboard') }}</span>
+                <span class="badge">{{ new_activities }}</span>
+              </a>
+            </li>
+            {% block header_account_settings_link %}
+              <li>
+                <a href="{{ h.url_for('user.edit', id=c.userobj.name) }}" title="{{ _('Profile settings') }}">
+                  <i class="fa fa-cog" aria-hidden="true"></i>
+                  <span class="text">{{ _('Profile settings') }}</span>
+                </a>
+              </li>
+            {% endblock %} {% block header_account_log_out_link %}
+              <li>
+                <a href="{{ h.url_for('user.logout') }}" title="{{ _('Log out') }}">
+                  <i class="fa fa-sign-out" aria-hidden="true"></i>
+                  <span class="text">{{ _('Log out') }}</span>
+                </a>
+              </li>
+            {% endblock %} {% endblock %}
+          </ul>
+        </div>
+      {% else %}
+        <nav class="account not-authed" aria-label="{{ _('Account') }}">
+          <ul class="list-unstyled">
+            {% block header_account_notlogged %}
+              <li>{% link_for _('Log in'), named_route='user.login' %}</li>
+              {% if h.check_access('user_create') %}
+                <li>{% link_for _('Register'), named_route='user.register', class_='sub' %}</li>
+              {% endif %} {% endblock %}
+          </ul>
+        </nav>
+      {% endif %} {% endblock %}
+    </div>
+  </div>
+{% endblock %}
+{% endblock %}
